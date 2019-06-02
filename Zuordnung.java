@@ -18,17 +18,11 @@ public class Zuordnung {
 	private Pferd[] pferde = new Pferd[9];
 	//Pferdenummer entspricht der Stelle im array von 0-8; 0 = nicht verfügbar; 1 = verfügbar; ändert sich in  jeder Rekursion, wird jedes Mal überschrieben,
 	private int[] pferdVerfuegbar = new int[9];
-	//Array, das die Zuordnung mit dem höchsten Wunschwert speichert.
-	private int[] pferdPfadOut = new int[8];
-	//Array, das in jeder Rekursion die aktuelle Zuordnung speichert.
-	private int[] pferdPfadinRec = new int[8];
 	
+	private int currentWPferd = 1;
+	private int currReiter;
+	private int currPferd;
 	private Pferd[] wpferde;
-	private Pferd currPony;
-	private int currPfer;
-	private int currReit;
-	private int fulfilled;
-	private int currentWunschScore = 0;
 	private int i = 0;
 	
 	//dies ist die HashMap, in der im Laufe des Programms die Reiter-Pferd-Paare eingetragen werden.
@@ -54,8 +48,6 @@ public class Zuordnung {
 		reiter[4] = new Reiter("Emil", 1, wpferde = Stream.of(pferde[0], pferde[1], pferde[2], pferde[3], pferde[4], pferde[5], pferde[6], pferde[7], pferde[8]).toArray(Pferd[]::new));
 		reiter[5] = new Reiter("Fritz", 3, wpferde = Stream.of(pferde[4], pferde[6]).toArray(Pferd[]::new));
 		reiter[6] = new Reiter("Gabi", 2, wpferde = Stream.of(pferde[0], pferde[4], pferde[5], pferde[6]).toArray(Pferd[]::new));
-		
-		fulfilled = 0;
 	}
 	
 	public Reiter getReiter(int i) {
@@ -70,52 +62,40 @@ public class Zuordnung {
 		return this.reiter;
 	}
 	
-	//wird zu Beginn eines neuen Pfades genutzt, damit alle Pferde wieder verfügar sind
-	public void setPferdVerfuegbar() {
-		for(int i=0; i <= 8; i++) {
-			pferdVerfuegbar[i] = 1;
-		}
-	}
-	
-/**
- * Rekursion	
- * @return
- */
-	public int[] paare(int reit, int pfer) {
+	public boolean generiereZuordnung(int reit, int wPferd) {
 		
-		if(reit == 7) {
-			return pferdPfadinRec;
+		currentWPferd = wPferd;
+		//Endbedingung; es soll bei Aufruf von Reiter 7 true zurückgegeben werden
+		if(reit == reiter.length) {
+			return true;
 		}
 		
-		//pfer soll reit zugeordnet werden; pferVerfuegbar [pfer] = 0
-		pferdPfadinRec[reit] = pfer;
-		pferdVerfuegbar[pfer] = 0;
-		//System.out.println(pferdPfadinRec[7]);
-		pferdPfadinRec[7] = pferdPfadinRec[7] + nimmPferd(reit, pfer);
-		
-		reit++;
-		pfer++;
-		paare(reit, pfer);
-		
-		//System.out.println(pferdPfadinRec);
-		return pferdPfadinRec;
-	}
-	
-	public void checkBessererPfad() {
-		if(pferdPfadinRec[7] > pferdPfadOut[7]) {
-			pferdPfadOut = pferdPfadinRec;
+		System.out.println(reiter[reit]);
+		out.put(reiter[reit], wpferde[currentWPferd]);
+		//prueft, ob das aktuelle Pferd auch dem koennen entspricht, wenn ja, geht's weiter
+		if(checkWPferd(reit, currentWPferd)) {
+			if(!out.containsValue(wpferde[currentWPferd])) {
+				//generiereZuordnung(reit, currentWPferd);
+				if(generiereZuordnung(reit+1, 0)) {
+					return true;
+				}else {
+					return false;
+				}
+			}
+			return false;
+			
+		} else {
+			out.put(reiter[reit], wpferde[currentWPferd]);
+			currentWPferd ++;
+			
+			//return false;
+			generiereZuordnung(reit, currentWPferd);
 		}
+		
+		return false;
 	}
 
-/*
-	public static int fakultaet(int f) {
-		if(f == 0) {
-			return 1;
-		}
-		fakultaet = f * fakultaet(f - 1);
-		System.out.println(f + "Fakultät: " + fakultaet);
-		return fakultaet;
-	}*/
+
 	
 	
 /*
@@ -124,47 +104,42 @@ public class Zuordnung {
  * @return
  */
 	public int nimmPferd(int j, int i){
-		System.out.println("Pferd Niveau: " + pferde[i].getNiveau());
-		System.out.println("Reiter Koennen: " + reiter[j].getKoennen());
+		//System.out.println("Pferd Niveau: " + pferde[i].getNiveau());
+		//System.out.println("Reiter Koennen: " + reiter[j].getKoennen());
 		if(pferde[i].getNiveau() <= reiter[j].getKoennen()) {
 			if(wunschPferd(pferde[i], reiter[j])) {
-				System.out.println("Juhuuuu " + pferde[i].toString() + ", das ist genau mein (" + reiter[j].toString() + ") Wunschpferd!" + "\n");
-				//i++;
-				currPony = pferde[i];
-				out.put(reiter[j], pferde[i]);
+				//System.out.println("Juhuuuu " + pferde[i].toString() + ", das ist genau mein (" + reiter[j].toString() + ") Wunschpferd!" + "\n");
 				return 1;
 			}
 			else {
-				System.out.println("OH NO, wie schade, das ist leider nicht mein (" + reiter[j].toString() + ") Wunschpferd! Aber ich versuch es trotzdem mit " + pferde[i].toString() + " ;)" + "\n");
-				//i++;
-				currPony = pferde[i];
-				out.put(reiter[j], pferde[i]);
+				//System.out.println("OH NO, wie schade, das ist leider nicht mein (" + reiter[j].toString() + ") Wunschpferd! Aber ich versuch es trotzdem mit " + pferde[i].toString() + " ;)" + "\n");
 				return 0;
 			}
 		}
 		else {
-			System.out.println("Was ist denn hier passiert? Dieses Pferd (" + pferde[i].toString() +") kann ich (" + reiter[j].toString() + ") noch nicht reiten!" + "\n");
-			//i++;
-			currPony = pferde[i];
+			//System.out.println("Was ist denn hier passiert? Dieses Pferd (" + pferde[i].toString() +") kann ich (" + reiter[j].toString() + ") noch nicht reiten!" + "\n");
 			return -1;
 		}
+	}
+	
+	public boolean checkWPferd(int reit, int wpferd) {
+		System.out.println(reiter[reit].toString() + " und " + reiter[reit].getWunschpferd(wpferd).toString() + "; Niveau: " + reiter[reit].getWunschpferd(wpferd).getNiveau() + "; Koennen: " + reiter[reit].getKoennen());
+		if(wpferde[wpferd].getNiveau() <= reiter[reit].getKoennen()) {
+			return true;
+		}
+		return false;
 	}
 	
 	
 	@SuppressWarnings("unlikely-arg-type")
 	public boolean wunschPferd(Pferd pferd, Reiter reiter) {
-		/*List<Pferd> x = );
-		System.out.println(x);
-		for (Pferd e : x) {
-			System.out.println(e.toString());
-		}*/
 		if (Arrays.asList(reiter.getWunschpferde()).contains(pferd)) {
 			return true;
 		}
 		return false;
 	}
 	
-	@Override
+	/*@Override
 	public String toString() {
 		String paare = "--------------------\n";
 		for (int r = 0; r < 7; r++) {
@@ -173,6 +148,18 @@ public class Zuordnung {
 		paare = paare + "dabei wurden " + pferdPfadinRec[7] + " Wünsche erfüllt!";
 		return paare;
 	}
+	*/
+	
+	@Override
+	public String toString() {
+		String pairs = "";
+		for(Reiter key : out.keySet())
+	    {
+	      pairs = pairs + ("Key: " + key + " - Value: " + out.get(key) + "\n");
+	    }
+		return pairs;
+	}
+	
 	
 }
  
